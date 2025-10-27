@@ -1,157 +1,187 @@
-function onFormSubmit(event) {
-  const functionName = "onFormSubmit"; 
-
-//get form info
-  Logger.log("Getting form info");
-  var formResponses = FormApp.getActiveForm().getResponses();
-  var lastResponse = formResponses[formResponses.length-1];
-  var lastAnswers = lastResponse.getItemResponses();
-  //var timestamp = lastResponse.getTimestamp();
- 
-  //var DESTINATION = lastAnswers[0].getResponse();
-  var DESTINATION = "Japan Private Repo (Japan PMOのみ閲覧可能)";  // 20240606 Globalは一旦は使わない方針
-  URL = "https://drive.google.com/drive/folders/0ANQ5Ex6IvvzsUk9PVA";
-  FOLDER_ID = "0ANQ5Ex6IvvzsUk9PVA";
-
-  //var FOLDER_ID = getIdFromUrl(URL);
-  var OPA_ID = lastAnswers[0].getResponse();
-  var ProjectName = lastAnswers[1].getResponse();
-  var EmailAddress = lastResponse.getRespondentEmail();
-  var NEW_FOLDER_NAME = OPA_ID + " " + ProjectName;
-  var EXCLUDE = "";
-  if (lastAnswers[2] == null) {
-    Logger.log("Nothing will be excluded");
-  } else {
-    EXCLUDE = lastAnswers[2].getResponse().toString();
-  }
- 
-  Logger.log("Form info retrieved");
-  Logger.log("Destination = "+DESTINATION);
-  Logger.log("URL = "+URL);
-  Logger.log("FOLDER_ID = "+FOLDER_ID);
-  Logger.log("OPA_ID = "+OPA_ID);
-  Logger.log("ProjectName = "+ProjectName);
-  Logger.log("EmailAddress = "+EmailAddress);
-  Logger.log("NEW_FOLDER_NAME = "+NEW_FOLDER_NAME);
-  Logger.log("EXCLUDE: "+EXCLUDE);
-
-//create folders
-  Logger.log("Creating new folders");
-  var myFolderID   = createFolder(FOLDER_ID, NEW_FOLDER_NAME);
-  var myFolderURL  = "https://drive.google.com/drive/folders/"+myFolderID;
-  var PreSalesFolder     = createFolder(myFolderID, "00_提案資料");
-  var DeliverablesFolder = createFolder(myFolderID, "01_作成資料");
-  var CustomerDocsFolder = createFolder(myFolderID, "02_受領資料");
-  var MeetingDocsFolder  = createFolder(myFolderID, "03_会議資料");
-  var PMDocsFolder       = createFolder(myFolderID, "99_PM");
-  Logger.log("New folders created");
-
-//Templates file locations and names
-  Logger.log("Retrieving template files");
-  var OneStopFile       = DriveApp.getFileById("1aoK6YUdJxmuXxBJCjIomoiYXzBN40GPFaIRB-omh_r0");
-  var PreSalesFile      = DriveApp.getFileById("10mtioQat9rtd4EAD1isczsVR944EnYMLofmlhnC7htE");
-  var DeliverablesFile  = DriveApp.getFileById("1AYqvaD-IkcNJAr2Cr7Y0DFcHhQNQd_pNIai3jBWPZ7I");
-  var MeetingDocsFile   = DriveApp.getFileById("1sD5-2-1786O4UW-RjNb9riaOpy2syMDn_FDfVTiw-Ik");
-  var CustomerDocsFile  = DriveApp.getFileById("17ldiFLpSY2fC9rQrSihaFhjpfeJ1FOqlYl8gNqQsiyI");
-  var PMDocsFile        = DriveApp.getFileById("1MONChbDlbhIbZ2EBKy1cZaywZVMpSwHNi9N-L5BM6qs");
-
-  var SalesToDelivery     = DriveApp.getFileById("1UdAmxVsqsCWGhsbIfKsaqgdCd4g5qMYpqNW_DmM8gl0");
-  var KickoffTemplate     = DriveApp.getFileById("1oooWDoD3SSYGQAiPYgQwsfKfVcnILyJkeQLBN7j5TJM");
-  var CloseTemplate       = DriveApp.getFileById("18s-y4d_akcdxub09Egc1pO-O-1nKxsAQEgFcak7EoXg");
-  var StakeholderTemplate = DriveApp.getFileById("1Ab2nf0C_eZ17VymzTLyJWoDoOnZCSca9K5WwWkI9Pbk");
-  var TimesheetTemplate   = DriveApp.getFileById("1v3zzmoJ7RMOVelhxXE7SgSEl8S9NLOR4zA1EF9hWcnQ");
-  var PSATimesheetTemplate= DriveApp.getFileById("1AypCKbzE3tBR0Szj_uaGu7Hbhk0aZEeMvmLZsoUuyxs");
-  var RiskIssueTemplate   = DriveApp.getFileById("1PTu-EKcrHarPe-rNFyyQDroY_TFW2QPke6VpTBlgP5g");
-  var GlobalRAIDTemplate  = DriveApp.getFileById("1o8FkfJpi6F9ByjWO3QcnojCq66F_zF_dQ7cT706n-aY");
-  Logger.log("Template files retrieved");
-
-
-//populate folders
-  Logger.log("Populating folders");
-
-  if (EXCLUDE.includes("説明ファイル")) {
-    Logger.log("Skipping folder explanation files");
-  } else {
-    Logger.log("Creating folder explanation files");
-    PreSalesFile.makeCopy(PreSalesFile.getName(), DriveApp.getFolderById(PreSalesFolder));
-    DeliverablesFile.makeCopy(DeliverablesFile.getName(), DriveApp.getFolderById(DeliverablesFolder));
-    CustomerDocsFile.makeCopy(CustomerDocsFile.getName(), DriveApp.getFolderById(CustomerDocsFolder));
-    MeetingDocsFile.makeCopy(MeetingDocsFile.getName(), DriveApp.getFolderById(MeetingDocsFolder));
-    PMDocsFile.makeCopy(PMDocsFile.getName(), DriveApp.getFolderById(PMDocsFolder));
-  }
-
-  if (EXCLUDE.includes("One Stop")) {
-    Logger.log("Skipping One Stop file");
-  } else {
-    Logger.log("Creating One Stop file");
-    OneStopFile.makeCopy("~ "+NEW_FOLDER_NAME+" One Stop ~", DriveApp.getFolderById(myFolderID));
-  }
-
-  if (EXCLUDE.includes("テンプレート")) {
-    Logger.log("Skipping templates");
-  } else {
-    Logger.log("Copying templates");
-    KickoffTemplate.makeCopy(NEW_FOLDER_NAME + " Kickoff", DriveApp.getFolderById(MeetingDocsFolder));
-    CloseTemplate.makeCopy(NEW_FOLDER_NAME + " Project Close", DriveApp.getFolderById(MeetingDocsFolder));
-
-    StakeholderTemplate.makeCopy(NEW_FOLDER_NAME + " Stakeholder Register", DriveApp.getFolderById(PMDocsFolder));
-    TimesheetTemplate.makeCopy(NEW_FOLDER_NAME + " Timesheet", DriveApp.getFolderById(PMDocsFolder));
-    PSATimesheetTemplate.makeCopy(NEW_FOLDER_NAME + " Timesheet (PSAデータ連動)", DriveApp.getFolderById(PMDocsFolder));
-    RiskIssueTemplate.makeCopy(NEW_FOLDER_NAME + " Risks & Issues Log", DriveApp.getFolderById(PMDocsFolder));
-    GlobalRAIDTemplate.makeCopy(NEW_FOLDER_NAME + " Global RAID Log", DriveApp.getFolderById(PMDocsFolder))
-  }
-
-  if (EXCLUDE.includes("Sales to Delivery")) {
-    Logger.log("Skipping Sales to Delivery Transtition Checklist");
-  } else {
-    Logger.log("Copying Sales to Delivery Transition Checklist");
-    SalesToDelivery.makeCopy(SalesToDelivery.getName(), DriveApp.getFolderById(PreSalesFolder));
-  }
-
-  Logger.log("Finished populating folders");
-
-  Logger.log("Sending completion email");
-  MailApp.sendEmail({to: EmailAddress, subject: OPA_ID + " " + ProjectName + " " + "project folder has been successfully created", body: "Project folder location:" + " " + myFolderURL}); //Send an email to form submitor 
-
-  Logger.log("Done");
-
-}
-
-// regex to retrieve the Google folder ID given a URL
-function getIdFromUrl(url) { 
-  //url = "https://drive.google.com/drive/folders/1axLoQC_JIo-l-IFkKwqtWtxO_i_InPMD?usp=sharing";
-  //url = "https://drive.google.com/drive/u/0/folders/1axLoQC_JIo-l-IFkKwqtWtxO_i_InPMD";
-  url = url.match(/[-\w]{25,}/); 
-  return url;
-}
-
-// creating folder from parent ID https://yagisanatode.com/2018/07/08/
-//https://lzomedia.com/blog/how-to-solve-this-problem-when-it-said-typeerror-cannot-read-property-getlastrow-of-null/
-//google-apps-script-how-to-create-folders-in-directories-with-driveapp/
-//Creates a folder as a child of the Parent folder with the ID: FOLDER_ID
-//Create folder if does not exists only
-
-function createFolder(folderID, folderName){
-  var parentFolder = DriveApp.getFolderById(folderID);
-  var subFolders = parentFolder.getFolders();
-  var doesntExists = true;
-  var newFolder = '';
+/**
+ * Configuration constants for the project folder creation automation
+ */
+const CONFIG = {
+  DESTINATION_FOLDER_ID: '0ANQ5Ex6IvvzsUk9PVA',
+  DESTINATION_NAME: 'Japan Private Repo (Japan PMOのみ閲覧可能)',
   
-  // Check if folder already exists.
-  while(subFolders.hasNext()){
-    var folder = subFolders.next();
-    
-    //If the name exists return the id of the folder
-    if(folder.getName() === folderName){
-      doesntExists = false;
-      newFolder = folder;
-      return newFolder.getId();
-    };
-  };
-  //If the name doesn't exists, then create a new folder
-  if(doesntExists == true){
-    //If the file doesn't exists
-    newFolder = parentFolder.createFolder(folderName);
-    return newFolder.getId();
-  };
+  // Template folder to copy from
+  TEMPLATE_FOLDER_ID: '1t9heIEB3EZI4IrZjlzk2C8lUT3I00W7e',
+  
+  // Template placeholder to replace in file names
+  TEMPLATE_PLACEHOLDER: '[TEMPLATE]'
 };
+
+/**
+ * Main form submission handler
+ * Triggered when a new form response is submitted
+ * 
+ * @param {Object} event - Form submission event (not currently used)
+ */
+function onFormSubmit(event) {
+  Logger.log('Starting project folder creation process');
+  
+  try {
+    const formData = getFormData();
+    logFormData(formData);
+    
+    // Create root project folder
+    const projectFolderId = createFolder(CONFIG.DESTINATION_FOLDER_ID, formData.folderName);
+    const projectFolderUrl = `https://drive.google.com/drive/folders/${projectFolderId}`;
+    
+    // Copy entire template folder structure
+    const templateFolder = DriveApp.getFolderById(CONFIG.TEMPLATE_FOLDER_ID);
+    const destinationFolder = DriveApp.getFolderById(projectFolderId);
+    
+    // Pass the full folder name (OPA_ID + ProjectName) for template replacement
+    copyFolderContents(templateFolder, destinationFolder, formData.folderName);
+    
+    sendConfirmationEmail(formData, projectFolderUrl);
+    
+    Logger.log('Project folder creation completed successfully');
+  } catch (error) {
+    Logger.log(`Error in onFormSubmit: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Extracts and parses form submission data
+ * 
+ * @returns {Object} Form data including OPA ID, project name, email, and folder name
+ */
+function getFormData() {
+  const formResponses = FormApp.getActiveForm().getResponses();
+  const lastResponse = formResponses[formResponses.length - 1];
+  const itemResponses = lastResponse.getItemResponses();
+  
+  const opaId = itemResponses[0].getResponse();
+  const projectName = itemResponses[1].getResponse();
+  const emailAddress = lastResponse.getRespondentEmail();
+  
+  return {
+    opaId,
+    projectName,
+    emailAddress,
+    folderName: `${opaId} ${projectName}`
+  };
+}
+
+/**
+ * Logs form data for debugging purposes
+ * 
+ * @param {Object} formData - The parsed form data
+ */
+function logFormData(formData) {
+  Logger.log(`OPA ID: ${formData.opaId}`);
+  Logger.log(`Project Name: ${formData.projectName}`);
+  Logger.log(`Email: ${formData.emailAddress}`);
+  Logger.log(`New Folder Name: ${formData.folderName}`);
+}
+
+/**
+ * Recursively copies all contents from source folder to destination folder
+ * Recreates folder structure and copies all files with name replacements
+ * 
+ * @param {GoogleAppsScript.Drive.Folder} sourceFolder - Source template folder
+ * @param {GoogleAppsScript.Drive.Folder} destinationFolder - Destination folder
+ * @param {string} replacementText - Text to replace [TEMPLATE] placeholder with (OPA_ID + ProjectName)
+ */
+function copyFolderContents(sourceFolder, destinationFolder, replacementText) {
+  Logger.log(`Copying contents from "${sourceFolder.getName()}" to "${destinationFolder.getName()}"`);
+  
+  // Copy all files in the current folder
+  const files = sourceFolder.getFiles();
+  while (files.hasNext()) {
+    const file = files.next();
+    const originalFileName = file.getName();
+    const newFileName = replaceTemplatePlaceholder(originalFileName, replacementText);
+    
+    Logger.log(`Copying file: "${originalFileName}" as "${newFileName}"`);
+    file.makeCopy(newFileName, destinationFolder);
+  }
+  
+  // Recursively copy all subfolders
+  const subFolders = sourceFolder.getFolders();
+  while (subFolders.hasNext()) {
+    const subFolder = subFolders.next();
+    const subFolderName = subFolder.getName();
+    
+    Logger.log(`Creating subfolder: "${subFolderName}"`);
+    const newSubFolder = destinationFolder.createFolder(subFolderName);
+    
+    // Recursively copy the subfolder's contents
+    copyFolderContents(subFolder, newSubFolder, replacementText);
+  }
+}
+
+/**
+ * Replaces the [TEMPLATE] placeholder in a string with the replacement text
+ * 
+ * @param {string} text - Original text containing [TEMPLATE] placeholder
+ * @param {string} replacementText - Text to replace placeholder with (OPA_ID + ProjectName)
+ * @returns {string} Text with placeholder replaced
+ */
+function replaceTemplatePlaceholder(text, replacementText) {
+  // Escape special regex characters in the placeholder (particularly the square brackets)
+  const escapedPlaceholder = CONFIG.TEMPLATE_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(escapedPlaceholder, 'g'), replacementText);
+}
+
+/**
+ * Sends confirmation email to the form submitter
+ * 
+ * @param {Object} formData - Form data including email address
+ * @param {string} folderUrl - URL of the created project folder
+ */
+function sendConfirmationEmail(formData, folderUrl) {
+  Logger.log('Sending confirmation email');
+  
+  const subject = `${formData.opaId} ${formData.projectName} project folder has been successfully created`;
+  const body = `Project folder location: ${folderUrl}`;
+  
+  MailApp.sendEmail({
+    to: formData.emailAddress,
+    subject: subject,
+    body: body
+  });
+}
+
+/**
+ * Extracts the Google Drive folder ID from a URL using regex
+ * 
+ * @param {string} url - Google Drive folder URL
+ * @returns {string|null} Extracted folder ID or null if not found
+ */
+function getIdFromUrl(url) { 
+  const match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
+}
+
+/**
+ * Creates a folder in Google Drive if it doesn't already exist
+ * If the folder exists, returns the existing folder's ID
+ * 
+ * @param {string} parentFolderId - ID of the parent folder
+ * @param {string} folderName - Name of the folder to create
+ * @returns {string} ID of the created or existing folder
+ */
+function createFolder(parentFolderId, folderName) {
+  const parentFolder = DriveApp.getFolderById(parentFolderId);
+  const subFolders = parentFolder.getFolders();
+  
+  // Check if folder already exists
+  while (subFolders.hasNext()) {
+    const folder = subFolders.next();
+    
+    if (folder.getName() === folderName) {
+      Logger.log(`Folder "${folderName}" already exists`);
+      return folder.getId();
+    }
+  }
+  
+  // Create new folder if it doesn't exist
+  Logger.log(`Creating new folder: "${folderName}"`);
+  const newFolder = parentFolder.createFolder(folderName);
+      return newFolder.getId();
+}
