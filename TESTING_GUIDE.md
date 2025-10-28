@@ -4,9 +4,145 @@ This guide explains how to safely test the script before deploying to production
 
 ## Testing Strategy Overview
 
-Since Google Apps Script runs in Google's cloud environment, you cannot execute it truly locally. However, you can set up a safe test environment to validate changes before deploying to production.
+This project supports **local mock testing** so you can develop and test your code completely locally without pushing to Google Workspace. Only push to Google Workspace when your code is fully ready and tested.
 
-## Option 1: Test Environment (Recommended)
+## ⭐ Local Mock Testing (Recommended for Development)
+
+### Overview
+
+This project includes a complete local testing framework that mocks all Google Apps Script APIs (DriveApp, FormApp, MailApp, Logger). You can run tests locally without any connection to Google Workspace.
+
+### Quick Start
+
+```bash
+# Install dependencies (first time only)
+npm install
+
+# Run all tests
+npm test
+
+# Watch mode - auto-run tests on file changes
+npm run test:watch
+```
+
+### What Gets Tested Locally
+
+The local test suite includes:
+
+✅ **Template placeholder replacement** - Verify `[TEMPLATE]` is replaced correctly  
+✅ **Folder creation logic** - Test folder creation and duplicate detection  
+✅ **Form data extraction** - Validate form data parsing  
+✅ **Recursive folder copying** - Test entire folder structure copying  
+✅ **File renaming** - Verify files are renamed correctly  
+✅ **Email sending** - Confirm emails are sent with correct data  
+✅ **End-to-end workflow** - Full simulation from form submission to completion
+
+### Test Output Example
+
+```
+================================================================================
+🧪 Running Local Mock Tests for Japan PM Tools
+================================================================================
+
+📋 Test Suite: Template Placeholder Replacement
+
+▶️  Test 1: Replace [TEMPLATE] with project name... ✅ PASSED
+▶️  Test 2: Replace [TEMPLATE] with special characters... ✅ PASSED
+▶️  Test 3: Multiple [TEMPLATE] replacements... ✅ PASSED
+▶️  Test 4: No [TEMPLATE] in string... ✅ PASSED
+▶️  Test 5: Japanese characters in replacement... ✅ PASSED
+
+📋 Test Suite: Folder Creation
+
+▶️  Test 7: Create new folder... ✅ PASSED
+▶️  Test 8: Return existing folder if already exists... ✅ PASSED
+
+...
+
+📋 Test Suite: End-to-End
+
+▶️  Test 15: Full workflow simulation... ✅ PASSED
+
+   📊 Created folder structure:
+   📁 JP-00001 Full Test Project
+     📄 ~JP-00001 Full Test Project One Stop~
+     📁 00_提案資料
+     📁 01_作成資料
+     📁 02_受領資料
+     📁 03_会議資料
+     📁 99_PM
+       📄 JP-00001 Full Test Project Stakeholder Register
+       📄 JP-00001 Full Test Project Timesheet v20250930
+       📄 ~ PM フォルダ内容 ~
+
+================================================================================
+📊 Test Results
+================================================================================
+✅ Passed: 15
+❌ Failed: 0
+📈 Total:  15
+================================================================================
+```
+
+### Development Workflow
+
+1. **Make changes** to `Code.js` locally in your editor
+2. **Run tests** with `npm test` to verify changes work
+3. **Iterate** - fix any failing tests
+4. **Repeat** until all tests pass
+5. **Push to Google Workspace** only when ready (see Option 2 below)
+
+### Adding New Tests
+
+Edit `tests/run-tests.js` to add new test cases:
+
+```javascript
+runTest('Test 16: Your new test description', () => {
+  // Setup test data
+  TestHelpers.setupMockFolderStructure('dest-123', 'template-456');
+  
+  // Execute the function you want to test
+  const result = yourFunction('test input');
+  
+  // Assert expected behavior
+  assertEqual(result, 'expected output');
+  assert(condition, 'condition should be true');
+});
+```
+
+### Mock Implementation Details
+
+The testing framework includes complete mocks for:
+
+- **`Logger`** - Logs to console instead of Google's logger
+- **`DriveApp`** - In-memory file system simulation
+- **`FormApp`** - Mock form responses
+- **`MailApp`** - Tracks sent emails without sending
+- **`TestHelpers`** - Utilities for setting up test data and assertions
+
+All mocks are in `tests/mocks.js` - you can extend them if needed.
+
+### Benefits of Local Testing
+
+✅ **Fast** - Instant feedback, no upload delay  
+✅ **Safe** - No risk of affecting production  
+✅ **Offline** - Works without internet  
+✅ **Free** - No Google Apps Script quotas  
+✅ **Debuggable** - Use console.log, debuggers, etc.  
+✅ **CI/CD Ready** - Can integrate with GitHub Actions  
+
+### Limitations
+
+The mocks simulate Google Apps Script behavior but:
+- Cannot test actual Google Drive API quirks
+- Cannot test network issues or timeouts
+- Cannot test permissions or sharing
+
+**Always do final testing in Google Workspace before production deployment** (see Option 2 below).
+
+---
+
+## Option 2: Test Environment in Google Workspace
 
 ### Setup Steps
 
@@ -99,7 +235,7 @@ After successful testing:
 3. Test one more time with production script (optional)
 4. Monitor first few production runs
 
-## Option 2: Local Development with clasp
+## Option 3: Local Development with clasp
 
 `clasp` (Command Line Apps Script Projects) allows you to develop locally and push to Google Apps Script.
 
@@ -175,7 +311,7 @@ Create or update `.clasp.json`:
 - ⚠️ Must have internet connection
 - ⚠️ Cannot run truly offline
 
-## Option 3: Manual Testing in Apps Script Editor
+## Option 4: Manual Testing in Apps Script Editor
 
 The simplest approach for quick tests:
 
@@ -227,7 +363,7 @@ Run this function to test without submitting a form.
 - ⚠️ No version control in editor
 - ⚠️ Risk of accidentally modifying production
 
-## Option 4: Unit Testing with Gas-Unit (Advanced)
+## Option 5: Unit Testing with Gas-Unit (Advanced)
 
 For comprehensive testing, you can write unit tests.
 
@@ -311,25 +447,31 @@ node Code.test.js
 
 ## Recommended Testing Workflow
 
+### For All Changes (Recommended)
+1. **Develop locally** - Make changes to `Code.js` in your editor
+2. **Run local tests** - `npm test` to verify logic works
+3. **Fix any issues** - Iterate until all tests pass
+4. **Test in Google Workspace** - Use test environment (Option 2) for final validation
+5. **Deploy to production** - Only when fully tested
+
 ### For Small Changes
-1. Use manual testing in Apps Script editor
-2. Submit test form
-3. Verify in logs
-4. Deploy to production
+1. Run local mock tests (`npm test`)
+2. If all pass, deploy to production
+3. Monitor first few runs
 
 ### For Major Changes
-1. Set up test environment (Option 1)
-2. Update test script with changes
+1. Run local mock tests (`npm test`)
+2. Set up test environment (Option 2)
 3. Test thoroughly with multiple scenarios
-4. Use clasp for local development (Option 2)
-5. Once verified, update production script
-6. Monitor first few production runs
+4. Use clasp for deployment (Option 3)
+5. Monitor first few production runs
 
 ### For Refactoring
-1. Write unit tests for critical functions (Option 4)
-2. Use clasp for local development (Option 2)
-3. Test in test environment (Option 1)
-4. Deploy to production
+1. Add new test cases to `tests/run-tests.js`
+2. Run local tests continuously (`npm run test:watch`)
+3. Refactor with confidence
+4. Final validation in test environment (Option 2)
+5. Deploy to production
 
 ## Testing Checklist
 
